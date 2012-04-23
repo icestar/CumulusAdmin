@@ -74,6 +74,14 @@ Usage
 * To allow everyone to publish client->server streams, set the "allow_publish" field for the desired application to "1" and leave the "publish_password" empty.
 * To allow everyone who knows the correct password to publish client->server streams, set the "allow_publish" field for the desired application to "1" and set a "publish_password"
 * To not allow anyone to publish client->server streams, set the "alllow_publish" field to "0"
+* To connect to an application, use:
+
+```
+// For an application with path="/example" associated to an developer with key="MyDeveloperKey"
+var con:NetConnection = new NetConnection();
+con.connect("/example", "MyDeveloperKey");
+```
+
 * To handle subscribe/unsubscribe callbacks, set the callback names for the application you want to use them with in the database and attach a custom client listener to your NetStream instance that you have connected with the NetStream.CONNECT_TO_FMS flag:
 
 ```

@@ -60,6 +60,39 @@ Table "publications":
 * subscribers:Number
 
 
+Installation
+------------
+* Create the database. You can use the included sql/mysql.sql to set up the scheme.
+* Copy the included lua/main.lua to CumulusServer/www/main.lua
+* Edit the CumulusServer/www/main.lua to match your database configuration (database, user, pass, host, port)
+* Create developers and applications inside the database. An example is included in sql/mysql-example.sql
+
+Usage
+-----
+* To add a new developer, insert one into the "developers" table.
+* To add a new application, insert one into the "applications" table and create the corresponding directory in CumulusServer/www including an empty main.lua. If you are going to add the application "/example", you just create the directory and main.lua as CumulusServer/www/example/main.lua
+* To allow everyone to publish client->server streams, set the "allow_publish" field for the desired application to "1" and leave the "publish_password" empty.
+* To allow everyone who knows the correct password to publish client->server streams, set the "allow_publish" field for the desired application to "1" and set a "publish_password"
+* To not allow anyone to publish client->server streams, set the "alllow_publish" field to "0"
+* To handle subscribe/unsubscribe callbacks, set the callback names for the application you want to use them with in the database and attach a custom client listener to your NetStream instance that you have connected with the NetStream.CONNECT_TO_FMS flag:
+
+  // ActionScript 3
+  var ns:NetStream = new NetStream(con, NetStream.CONNECT_TO_FMS);
+  var c:Object = new Object;
+  c.onRelayConnected = function(publicationName:String, peerId:String, total:Number):void {
+  	trace("Peer "+peerId+" connected to publication "+publicationName+" (now "+total+" total subscribers)");
+  }
+  c.onRelayDisconnected = function(publicationName:String, peerId:String, remaining:Number):void {
+  	trace("Peer "+peerId+" disconnected from publication "+publicationName+" (now "+remaining+" remaining subscribers)")
+  }
+  ns.client = c;
+  ...
+  ns.publish("somePublicationName"); // Don't forget to "allow_publish"
+
+* To get an overview of your current peers and publication statistics simply query the "peers" and "publications" tables. These contain a complete image of the current state of CumulusServer.
+* To enable/disable developers or applications, change the "enabled" property of the corresponding row in the database.
+
+
 Things still to do
 ------------------
 

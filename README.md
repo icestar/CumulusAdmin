@@ -76,6 +76,7 @@ Usage
 * To not allow anyone to publish client->server streams, set the "alllow_publish" field to "0"
 * To handle subscribe/unsubscribe callbacks, set the callback names for the application you want to use them with in the database and attach a custom client listener to your NetStream instance that you have connected with the NetStream.CONNECT_TO_FMS flag:
 
+```
     // ActionScript 3
     var ns:NetStream = new NetStream(con, NetStream.CONNECT_TO_FMS);
     var c:Object = new Object;
@@ -88,7 +89,7 @@ Usage
     ns.client = c;
     ...
     ns.publish("somePublicationName"); // Don't forget to "allow_publish"
-
+```
 
 * To get an overview of your current peers and publication statistics simply query the "peers" and "publications" tables. These contain a complete image of the current state of CumulusServer.
 * To enable/disable developers or applications, change the "enabled" property of the corresponding row in the database.

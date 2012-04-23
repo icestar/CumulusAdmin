@@ -200,21 +200,21 @@ function onConnection(client, response, connectkey)
 	client.appClientId = CAappClientsCounter
 	CA_NOTE("Client "..client.appId.."-"..client.appClientId.." ("..client.address..") connected to application "..CAapp.id..":"..CAapp.path.." ("..CAappClients.." clients)")
 	local pageUrl = client.pageUrl
-	if pageUrl == "" or pageUrl == "0" then
+	if pageUrl == nil or pageUrl == "" or pageUrl == "0" then
 		pageUrl = nil
 	else
 		pageUrl = esc(pageUrl)
 	end
 	local swfUrl = client.swfUrl
-	if swfUrl == "" or swfUrl == "0" then
+	if swfUrl == nil or swfUrl == "" or swfUrl == "0" then
 		swfUrl = nil
 	else
 		swfUrl = esc(swfUrl)
 	end
 	assert(CAcon:execute(string.format([[
 		INSERT INTO %sclients (id, application_id, address, pageUrl, swfUrl, flashVersion)
-		VALUES ('%s', %d, '%s', %s, %s, %s)
-	]], CAdbPrefix, esc(client.id), CAapp.id, esc(client.address), quote(pageUrl), quote(swfUrl), quote(client.flashVersion))), "Failed to insert client into database")
+		VALUES ('%s', %d, %s, %s, %s, %s)
+	]], CAdbPrefix, esc(client.id), CAapp.id, quote(client.address), quote(pageUrl), quote(swfUrl), quote(client.flashVersion))), "Failed to insert client into database")
 end
 
 -- Called as soon as a client calls publish(...) on a NetStream connected with "CONNECT_TO_FMS"
@@ -356,7 +356,7 @@ function onManage()
 	local now = os.time()
 	if (CAappUpdateTime < now-CAupdateInterval) then -- update from database every updateInterval seconds
 		CAappUpdateTime = now
-		local appData = loadapp(appPath)
+		local appData = loadapp(CAappPath)
 		if CAapp and not appData then
 			if CAapp.enabled == "1" then
 				CA_WARN("Application "..CAapp.id..":"..CAapp.path.." has been deleted from the database and will be disabled")

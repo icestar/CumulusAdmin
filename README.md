@@ -89,6 +89,7 @@ Usage
     ...
     ns.publish("somePublicationName"); // Don't forget to "allow_publish"
 
+
 * To get an overview of your current peers and publication statistics simply query the "peers" and "publications" tables. These contain a complete image of the current state of CumulusServer.
 * To enable/disable developers or applications, change the "enabled" property of the corresponding row in the database.
 

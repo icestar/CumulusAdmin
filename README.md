@@ -77,9 +77,12 @@ Usage
 * To connect to an application, use:
 
 ```
-// For an application with path="/example" associated to an developer with key="MyDeveloperKey"
+// For an application with path="/example" associated to a developer with key="MyDeveloperKey"
 var con:NetConnection = new NetConnection();
 con.connect("/example", "MyDeveloperKey");
+
+// If the developer has not set a key, any password will work, or you may simply use:
+con.connect"/example");
 ```
 
 * To handle subscribe/unsubscribe callbacks, set the callback names for the application you want to use them with in the database and attach a custom client listener to your NetStream instance that you have connected with the NetStream.CONNECT_TO_FMS flag:

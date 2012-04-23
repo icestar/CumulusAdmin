@@ -80,6 +80,7 @@ Usage
 // ActionScript 3
 var ns:NetStream = new NetStream(con, NetStream.CONNECT_TO_FMS);
 var c:Object = new Object;
+
 // For subscribe_callback="onRelayConnected" and unsubscribe_callback="onRelayDisconnected"
 c.onRelayConnected = function(publicationName:String, peerId:String, total:Number):void {
 	trace("Peer "+peerId+" connected to publication "+publicationName+" (now "+total+" total subscribers)");

@@ -1,7 +1,8 @@
 --
 -- CumulusAdmin
 --
--- (c) dcode@openrtmpf.net
+-- See the LICENSE file for license information
+-- (c) OpenRTMFP.net
 --
 
 -- Configure the database driver you like to use, see: http://www.keplerproject.org/luasql/

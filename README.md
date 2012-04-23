@@ -80,6 +80,7 @@ Usage
 // ActionScript 3
 var ns:NetStream = new NetStream(con, NetStream.CONNECT_TO_FMS);
 var c:Object = new Object;
+// For subscribe_callback="onRelayConnected" and unsubscribe_callback="onRelayDisconnected"
 c.onRelayConnected = function(publicationName:String, peerId:String, total:Number):void {
 	trace("Peer "+peerId+" connected to publication "+publicationName+" (now "+total+" total subscribers)");
 }
@@ -88,7 +89,12 @@ c.onRelayDisconnected = function(publicationName:String, peerId:String, remainin
 }
 ns.client = c;
 // ...
-ns.publish("somePublicationName"); // Don't forget to "allow_publish"
+
+// For allow_publish="1"
+ns.publish("somePublicationName");
+
+// ...or if you have also also set publish_password="somePassword"
+ns.publish("somePublicationName", "somePassword");
 ```
 
 * To get an overview of your current peers and publication statistics simply query the "peers" and "publications" tables. These contain a complete image of the current state of CumulusServer.

@@ -9,16 +9,16 @@ The server side code has been written in LUA that is provided natively by Cumulu
 Features
 --------
 
-* Manage the vital parts of Cumulus on the fly without the requirement to restart
+* Easily manage the vital parts of Cumulus on the fly without the requirement to write LUA or to restart the server
 * Manage developers and applications via your database
-* Manage developers' keys
+* Manage developers' connect keys
 * Manage applications identified by a unique path
 * Enable/disable certain developers and applications
 * Configure if publishing is allowed for client->server streams
 * If allowed, optionally set a publishing password
-* Configure subscribe/unsubscribe callbacks for publisher->server->subscriber streams to notify the publisher about connected/disconnected subscribers
-* Have a complete image of clients, groups and publications inside the database, e.g. for live statistics
-
+* Add subscribe/unsubscribe callbacks for publisher->server->subscriber streams to notify the publisher about its publication's subscribers
+* Holds a complete image of clients, groups and publications inside the database, e.g. for live statistics
+* Easily configurable through CumulusServer.ini
 
 SQL scheme
 ----------
@@ -26,7 +26,7 @@ SQL scheme
 Table "developers":
 * id:Number
 * enabled:0|1
-* connect_key:String|NULL
+* connectkey:String|NULL
 * contact:String|NULL
 * password:String|NULL
 
@@ -40,7 +40,7 @@ Table "applications":
 * subscribe_callback:String|NULL
 * unsubscribe_callback:String|NULL
 
-Table "clients":
+Table "clients": 
 * id:String
 * application_id:Number → applications.id
 * address:String[host:port]
@@ -48,47 +48,47 @@ Table "clients":
 * swfUrl:String
 * flashVersion:String
 
-Table "groups":
+Table "groups": Holds all current groups
 * application_id:Number → applications.id
 * id:String
-* clients:Number
+* members:Number
 
-Table "groups_clients":
+Table "groups_clients": Holds group members
 * group_id:String → groups.id
 * client_id:String → clients.id
 
-Table "publications":
+Table "publications": Holds publications by client
 * application_id:Number → applications.id
 * client_id:String → clients.id
 * name:String
 * subscribers:Number
 
-Table "publications_clients":
-* publication_name:String
-* client_id:String
+Table "publications_clients": Holds subscribed clients by publication
+* publication_name:String → publications.name
+* client_id:String → clients.id
 
 Installation
 ------------
-* Create the database. You can use the included sql/mysql.sql to set up the an InnoDB scheme with correctly connected foreign keys.
+* Create the database. You can use the included sql/mysql.sql to set up an InnoDB scheme with properly connected foreign keys.
 * Copy the included lua/main.lua to CumulusServer/www/main.lua
-* Create or edit your CumulusServer.ini and add your database configuration. You can use the included conf/CumulusAdmin-example.ini as a starting point.
-* Create developers and applications inside the database. An example is included in sql/mysql-example.sql
+* Create or edit your CumulusServer.ini and add your database configuration. You can use the included conf/CumulusServer-example.ini as a starting point.
+* Create developers and applications inside the database. A very basic example is included in sql/mysql-example.sql
 
 Usage
 -----
 * To add a new developer, insert one into the "developers" table.
-* To add a new application, insert one into the "applications" table and create the corresponding directory in CumulusServer/www including an empty main.lua. If you are going to add the application "/example", you just create the directory and main.lua as CumulusServer/www/example/main.lua
+* To add a new application, insert one into the "applications" table and create the corresponding directory in CumulusServer/www including an empty main.lua. If you are going to add the application "/example", you just create the directory and an empty main.lua at CumulusServer/www/example/main.lua
 * To allow everyone to publish client->server streams, set the "allow_publish" field for the desired application to "1" and leave the "publish_password" empty.
 * To allow everyone who knows the correct password to publish client->server streams, set the "allow_publish" field for the desired application to "1" and set a "publish_password"
-* To not allow anyone to publish client->server streams, set the "alllow_publish" field to "0"
+* To not allow anyone to publish client->server streams i.e. to allow P2P only, set the "alllow_publish" field to "0"
 * To connect to an application, use:
 
 ```as3
-// For an application with path="/example" associated to a developer with key="MyDeveloperKey"
+// For an application with path="/example" associated to a developer with connectkey="MyDeveloperKey"
 var con:NetConnection = new NetConnection();
-con.connect("/example", "MyDeveloperKey");
+con.connect("/example", "MyDeveloperConnectKey");
 
-// If the developer has not set a key, any password will work, or you may simply use:
+// If the developer has not set a connectkey then just any password will work, or you may simply use:
 con.connect"/example");
 ```
 
@@ -99,7 +99,8 @@ con.connect"/example");
 var ns:NetStream = new NetStream(con, NetStream.CONNECT_TO_FMS);
 var c:Object = new Object;
 
-// For subscribe_callback="onRelayConnected" and unsubscribe_callback="onRelayDisconnected"
+// Example for subscribe_callback="onRelayConnected" and unsubscribe_callback="onRelayDisconnected"
+
 c.onRelayConnected = function(publicationName:String, peerId:String, total:Number):void {
 	trace("Peer "+peerId+" connected to publication "+publicationName+" (now "+total+" total subscribers)");
 }
@@ -116,14 +117,14 @@ ns.publish("somePublicationName");
 ns.publish("somePublicationName", "somePassword");
 ```
 
-* To get an overview of the current clients, groups and publications statistics simply query the "clients", "groups" and "publications" tables. These contain a complete image of the current state of CumulusServer. The tables "groups_clients" and "publications_clients" contain the corresponding mapping between these relations.
-* To enable/disable developers or applications, change the "enabled" property of the corresponding row in the database.
+* To get an overview of the current clients, groups and publications statistics simply query the "clients", "groups" and "publications" tables. These contain a complete image of the current state of CumulusServer. The tables "groups_clients" and "publications_clients" contain the corresponding relational mapping between these relations.
+* To enable/disable developers or applications just change the "enabled" property of the corresponding object in your database.
 
 
 Extending CumulusAdmin
 ----------------------
 
-It's easy to extend CumulusAdmin from within applications. Just make sure to call www:implementedMethod(...) when implementing one of Cumulus' various event handlers. Let's say that www/main.lua contains CumulusAdmin and you are creating a new application named "example". Then you'd write in www/example/main.lua:
+It's easy to extend CumulusAdmin from within applications. Just make sure to call www:implementedMethod(...) when implementing one of Cumulus' various event handlers. Let's say that www/main.lua already contains CumulusAdmin and you are creating a new application named "example" and want to use the onConnection handler. Then you'd write in www/example/main.lua:
 
 ```lua
 function onConnection(client, response, connectkey, ...)
@@ -143,7 +144,7 @@ Things still to do
 
 * Easy to use PHP administration frontend
 * If possible, extend subscribe/unsubscribe callbacks to let the publisher decide if a subscriber is allowed to connect
-* Decide what to do about the requirement to create empty directories with empty main.lua's for each application
+* Decide what to do about the requirement to create empty directories with empty main.lua's for each application (one idea: explicitly return "true")
 
 
 License

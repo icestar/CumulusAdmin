@@ -69,10 +69,10 @@ Table "publications_clients": Holds subscribed clients by publication
 
 Installation
 ------------
-* Create the database. You can use the included sql/mysql.sql to set up an InnoDB scheme with properly connected foreign keys.
+* Create the database. You can use the included sql/cumulus.sql to set up an InnoDB scheme with properly connected foreign keys.
 * Copy the included lua/main.lua to CumulusServer/www/main.lua
 * Create or edit your CumulusServer.ini and add your database configuration. You can use the included conf/CumulusServer-example.ini as a starting point.
-* Create developers and applications inside the database. A very basic example is included in sql/mysql-example.sql
+* Create developers and applications inside the database. A very basic example is already included in sql/cumulus.sql.
 
 Usage
 -----

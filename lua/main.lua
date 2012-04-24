@@ -196,9 +196,9 @@ function CA_getApp(path, secret)
 				CA_NOTE("Application "..app.id..":"..app.path.." has been disabled by configuration")
 			end
 			app.enabled = data.enabled
-			if app.developer_id ~= developer_id then
+			if app.developer_id ~= data.developer_id then
 				CA_NOTE("Application "..app.id..":"..app.path.." has changed its developer")
-				app.developer_id = developer_id
+				app.developer_id = data.developer_id
 				app.dev = CA_loadDev(app.developer_id, secret)
 			end
 			app.allow_publish = data.allow_publish
@@ -390,10 +390,10 @@ function onJoinGroup(client, group)
 		return "Application is disabled" -- Is this possible?
 	end
 	if group.size == 1 then
-		CA.groups = CA.groups+1
-		CA.groupsCounter = CA.groupsCounter+1
+		app.groups = app.groups+1
+		app.groupsCounter = app.groupsCounter+1
 		group.appId = app.id
-		group.appGid = CA.groupsCounter
+		group.appGid = app.groupsCounter
 		assert(CA.con:execute(string.format([[
 			INSERT INTO %sgroups (id, application_id, members, create_time) VALUES (%s, %d, %d, %d)
 		]], CA.dbPrefix, CA_quote(group.id), app.id, 1, os.time())), "Failed to insert group into database")
@@ -415,7 +415,10 @@ function onUnjoinGroup(client, group)
 		DELETE FROM %sgroups_clients WHERE group_id=%s AND client_id=%s
 	]], CA.dbPrefix, CA_quote(group.id), CA_quote(client.id))), "Failed to delete group/client relation from database")
 	if group.size == 0 then
-		CA.groups = CA.groups-1
+		local app = CA_getApp(client.path, CA.secret)
+		if app then
+			app.groups = app.groups-1
+		end
 		assert(CA.con:execute(string.format([[
 			DELETE FROM %sgroups WHERE id=%s
 		]], CA.dbPrefix, CA_quote(group.id))), "Failed to delete group from database")

@@ -24,7 +24,12 @@ function CA_NOTE(s)	NOTE("[CA] "..s) end
 function CA_WARN(s) WARN("[CA] "..s) end
 function CA_ERROR(s) ERROR("[CA] "..s) end
 
-if not cumulus.CA then -- first start
+local secret = "ChangeByConf"
+if cumulus.configs.admin.secret then
+	secret = cumulus.configs.admin.secret
+end
+
+if not cumulus["CA_"..secret] then -- first start
 	CA_NOTE("Loading CumulusAdmin (http://www.openrtmfp.net)")
 	
 	CA = {}
@@ -36,7 +41,7 @@ if not cumulus.CA then -- first start
 	CA.dbPass = ""
 	CA.dbPrefix = ""
 	CA.updateInterval = 60
-	CA.secret = "ChangeByConf"
+	CA.secret = secret
 	
 	CA.apps = {}
 	
@@ -63,9 +68,6 @@ if not cumulus.CA then -- first start
 	end
 	if cumulus.configs.admin.update_interval then
 		CA.updateInterval = cumulus.configs.admin.update_interval
-	end
-	if cumulus.configs.admin.secret then
-		CA.secret = cumulus.configs.admin.secret
 	end
 	
 	-- See: http://www.keplerproject.org/luasql/
@@ -108,12 +110,12 @@ if not cumulus.CA then -- first start
 		"DELETE FROM %sclients"
 	]], CA.dbPrefix))
 	
-	cumulus.CA = CA
+	cumulus["CA_"..CA.secret] = CA
 	CA_NOTE("CumulusAdmin has been loaded")
 
 else -- reloaded
 	CA_NOTE("CumulusAdmin has been reloaded")
-	CA = cumulus.CA
+	CA = cumulus["CA_"..secret]
 end
 
 -- Quotes a string to be used in database queries

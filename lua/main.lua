@@ -467,7 +467,7 @@ end
 
 -- Called as soon as a client has disconnected from Cumulus for whatever local or remote reason
 function onDisconnection(client, ...)
-	if client.connected then -- only once e.g. on fail+disco
+	if client.connected then -- only once
 		client.connected = false
 		local app = CA_getApp(client.path, CA.secret)
 		if app then

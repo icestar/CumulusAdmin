@@ -288,6 +288,7 @@ function onConnection(client, response, connectkey)
 	client.appPath = app.path;
 	client.appId = app.id
 	client.appUid = app.clientsCounter
+	client.connected = true
 	
 	CA_NOTE("Client "..client.appId.."-"..client.appUid.." ("..client.address..") connected to application "..app.id..":"..app.path.." ("..app.clients.." clients)")
 	
@@ -459,18 +460,26 @@ function onDataPacket(client, publication, name, packet)
 	end
 end
 
+-- Called as soon as a client has failed for whatever local or remote reason
+function onFailed(client, error)
+	onDisconnection(client)
+end
+
 -- Called as soon as a client has disconnected from Cumulus for whatever local or remote reason
 function onDisconnection(client, ...)
-	local app = CA_getApp(client.path, CA.secret)
-	if app then
-		app.clients = app.clients-1
-		CA_NOTE("Client "..client.appId.."-"..client.appUid.." disconnected from application "..client.appId..":"..client.appPath.." ("..app.clients.." clients)")
-	else -- should not happen
-		CA_WARN("Client "..client.appId.."-"..client.appUid.." disconnected from application "..client.appId..":"..client.appPath.." (Application not found)")
+	if client.connected then -- only once e.g. on fail+disco
+		client.connected = false
+		local app = CA_getApp(client.path, CA.secret)
+		if app then
+			app.clients = app.clients-1
+			CA_NOTE("Client "..client.appId.."-"..client.appUid.." disconnected from application "..client.appId..":"..client.appPath.." ("..app.clients.." clients)")
+		else -- should not happen
+			CA_WARN("Client "..client.appId.."-"..client.appUid.." disconnected from application "..client.appId..":"..client.appPath.." (Application not found)")
+		end
+		assert(CA.con:execute(string.format([[
+			DELETE FROM %sclients WHERE id=%s
+		]], CA.dbPrefix, CA_quote(client.id))), "Failed to delete client from database")
 	end
-	assert(CA.con:execute(string.format([[
-		DELETE FROM %sclients WHERE id=%s
-	]], CA.dbPrefix, CA_quote(client.id))), "Failed to delete client from database")
 end
 
 -- Called as soon as the application is stopped, usually when Cumulus is shut down gracefully

@@ -24,6 +24,27 @@ function CA_NOTE(s)	NOTE("[CA] "..s) end
 function CA_WARN(s) WARN("[CA] "..s) end
 function CA_ERROR(s) ERROR("[CA] "..s) end
 
+-- Ensures availability of the database connection
+function CA_ensureDb(secret)
+	if secret ~= CA.secret then
+		CA_WARN("Attempt to access CA_ensureDb with a wrong secret")
+		return nil
+	end
+	local now = os.time()
+	if not CA.dbConnectTime or CA.dbConnectTime < now-60 then
+		if CA.dbDriver == "mysql" then
+			CA.con = assert(CA.db:connect(CA.dbName, CA.dbUser, CA.dbPass, CA.dbHost, CA.dbPort), "Failed to connect to database via MySQL")
+		elseif CA.dbDriver == "postgres" then
+			CA.con = assert(CA.db:connect(CA.dbName, CA.dbUser, CA.dbPass, CA.dbHost, CA.dbPort), "Failed to connect to database via Postgres")
+		else
+			CA.con = assert(CA.db:connect(CA.dbSource, CA.dbUser, CA.dbPass), "Failed to connect to database via ODBC")
+		end
+		if CA.con then
+			CA.dbConnectTime = now
+		end
+	end
+end
+
 local secret = "ChangeByConf"
 if cumulus.configs.admin.secret then
 	secret = cumulus.configs.admin.secret
@@ -82,16 +103,14 @@ if not cumulus["CA_"..secret] then -- first start
 	if CA.dbDriver == "mysql" then
 		require "luasql.mysql"
 		CA.db = assert(luasql.mysql(), "Failed to get MySQL handle: Is the MySQL driver installed?")
-		CA.con = assert(CA.db:connect(CA.dbName, CA.dbUser, CA.dbPass, CA.dbHost, CA.dbPort), "Failed to connect to database via MySQL")
 	elseif CA.dbDriver == "postgres" then
 		require "luasql.postgres"
 		CA.db = assert(luasql.postgres(), "Failed to get Postgres handle: Is the Postgres driver installed?")
-		CA.con = assert(CA.db:connect(CA.dbName, CA.dbUser, CA.dbPass, CA.dbHost, CA.dbPort), "Failed to connect to database via Postgres")
 	else
 		require "luasql.odbc"
 		CA.db = assert(luasql.odbc(), "Failed to get ODBC handle: Is the ODBC driver installed?")
-		CA.con = assert(CA.db:connect(CA.dbSource, CA.dbUser, CA.dbPass), "Failed to connect to database via ODBC")
 	end
+	CA_ensureDb(CA.secret)
 	
 	CA_NOTE("Cleaning up previous state")
 	CA.con:execute(string.format([[
@@ -505,6 +524,7 @@ end
 -- Called every 2 seconds
 function onManage()
 	local now = os.time()
+	CA_ensureDb(CA.secret)
 	for path, app in pairs(CA.apps) do
 		if app.trafficUpdateTime < now - CA.updateInterval then
 			app.trafficUpdateTime = now
